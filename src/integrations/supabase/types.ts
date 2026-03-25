@@ -14,7 +14,145 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      business_cards: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          instagram_url: string | null
+          job_title: string | null
+          linkedin_url: string | null
+          name: string
+          organization: string | null
+          phone: string | null
+          public_id: string
+          status: string
+          twitter_url: string | null
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          instagram_url?: string | null
+          job_title?: string | null
+          linkedin_url?: string | null
+          name: string
+          organization?: string | null
+          phone?: string | null
+          public_id?: string
+          status?: string
+          twitter_url?: string | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          instagram_url?: string | null
+          job_title?: string | null
+          linkedin_url?: string | null
+          name?: string
+          organization?: string | null
+          phone?: string | null
+          public_id?: string
+          status?: string
+          twitter_url?: string | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      qr_codes: {
+        Row: {
+          card_id: string
+          created_at: string
+          id: string
+          qr_string: string
+          qr_type: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          id?: string
+          qr_string: string
+          qr_type?: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          id?: string
+          qr_string?: string
+          qr_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qr_codes_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "business_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_logs: {
+        Row: {
+          id: string
+          qr_id: string
+          scanned_at: string
+        }
+        Insert: {
+          id?: string
+          qr_id: string
+          scanned_at?: string
+        }
+        Update: {
+          id?: string
+          qr_id?: string
+          scanned_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_logs_qr_id_fkey"
+            columns: ["qr_id"]
+            isOneToOne: false
+            referencedRelation: "qr_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
