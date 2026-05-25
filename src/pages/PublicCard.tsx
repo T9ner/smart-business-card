@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Phone, Mail, Globe, MapPin, Linkedin, Instagram, Twitter } from "lucide-react";
+import { Phone, Mail, Globe, MapPin, Linkedin, Instagram, Twitter, Download, UserPlus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { downloadVCard } from "@/lib/vcard";
+import FeedbackForm from "@/components/FeedbackForm";
 
 interface CardData {
+  id: string;
   name: string;
   job_title: string | null;
   organization: string | null;
@@ -14,6 +18,9 @@ interface CardData {
   linkedin_url: string | null;
   instagram_url: string | null;
   twitter_url: string | null;
+  avatar_url: string | null;
+  visible_fields: Record<string, boolean>;
+  theme: { primaryColor: string; accentColor: string; backgroundColor: string };
 }
 
 export default function PublicCard() {
@@ -23,17 +30,27 @@ export default function PublicCard() {
 
   useEffect(() => {
     if (!publicId) return;
-    
+
     const load = async () => {
       const { data, error } = await supabase
         .from("business_cards")
-        .select("name, job_title, organization, phone, email, website, address, linkedin_url, instagram_url, twitter_url, id, status")
+        .select("id, name, job_title, organization, phone, email, website, address, linkedin_url, instagram_url, twitter_url, avatar_url, visible_fields, theme, status")
         .eq("public_id", publicId)
         .eq("status", "active")
         .single();
 
       if (error || !data) { setNotFound(true); return; }
-      setCard(data);
+
+      // Parse JSONB fields with defaults
+      const visibleFields = (typeof data.visible_fields === "object" && data.visible_fields !== null)
+        ? data.visible_fields as Record<string, boolean>
+        : { phone: true, email: true, website: true, address: true, linkedin_url: true, instagram_url: true, twitter_url: true };
+
+      const theme = (typeof data.theme === "object" && data.theme !== null)
+        ? data.theme as { primaryColor: string; accentColor: string; backgroundColor: string }
+        : { primaryColor: "#1a365d", accentColor: "#2d9c83", backgroundColor: "#f8fafc" };
+
+      setCard({ ...data, visible_fields: visibleFields, theme });
 
       // Log scan
       const { data: qrData } = await supabase
@@ -41,7 +58,7 @@ export default function PublicCard() {
         .select("id")
         .eq("card_id", data.id)
         .limit(1);
-      
+
       if (qrData && qrData.length > 0) {
         await supabase.from("scan_logs").insert({ qr_id: qrData[0].id });
       }
@@ -52,9 +69,10 @@ export default function PublicCard() {
   if (notFound) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted px-4">
-        <div className="text-center">
+        <div className="text-center animate-fade-in">
           <h1 className="font-heading text-2xl font-bold mb-2">Card Not Found</h1>
-          <p className="text-muted-foreground">This business card doesn't exist or is inactive.</p>
+          <p className="text-muted-foreground mb-6">This business card doesn't exist or is inactive.</p>
+          <Button asChild><Link to="/">Go to CardSync</Link></Button>
         </div>
       </div>
     );
@@ -63,48 +81,95 @@ export default function PublicCard() {
   if (!card) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted">
-        <p className="text-muted-foreground">Loading...</p>
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  const contactItems: { icon: typeof Phone; label: string; value: string | null; href?: string }[] = [
-    { icon: Phone, label: "Phone", value: card.phone, href: card.phone ? `tel:${card.phone}` : undefined },
-    { icon: Mail, label: "Email", value: card.email, href: card.email ? `mailto:${card.email}` : undefined },
-    { icon: Globe, label: "Website", value: card.website, href: card.website || undefined },
-    { icon: MapPin, label: "Address", value: card.address },
+  const vf = card.visible_fields;
+
+  const contactItems: { icon: typeof Phone; label: string; value: string | null; href?: string; fieldKey: string }[] = [
+    { icon: Phone, label: "Phone", value: card.phone, href: card.phone ? `tel:${card.phone}` : undefined, fieldKey: "phone" },
+    { icon: Mail, label: "Email", value: card.email, href: card.email ? `mailto:${card.email}` : undefined, fieldKey: "email" },
+    { icon: Globe, label: "Website", value: card.website, href: card.website || undefined, fieldKey: "website" },
+    { icon: MapPin, label: "Address", value: card.address, fieldKey: "address" },
   ];
 
   const socialItems = [
-    { icon: Linkedin, value: card.linkedin_url, label: "LinkedIn" },
-    { icon: Instagram, value: card.instagram_url, label: "Instagram" },
-    { icon: Twitter, value: card.twitter_url, label: "X / Twitter" },
+    { icon: Linkedin, value: card.linkedin_url, label: "LinkedIn", fieldKey: "linkedin_url" },
+    { icon: Instagram, value: card.instagram_url, label: "Instagram", fieldKey: "instagram_url" },
+    { icon: Twitter, value: card.twitter_url, label: "X / Twitter", fieldKey: "twitter_url" },
   ];
 
+  const visibleContacts = contactItems.filter((item) => item.value && vf[item.fieldKey] !== false);
+  const visibleSocials = socialItems.filter((s) => s.value && vf[s.fieldKey] !== false);
+
+  const handleDownloadVCard = () => {
+    const vcardData: Record<string, string | null | undefined> = { name: card.name };
+    // Only include visible fields in vCard
+    if (vf.phone !== false) vcardData.phone = card.phone;
+    if (vf.email !== false) vcardData.email = card.email;
+    if (vf.website !== false) vcardData.website = card.website;
+    if (vf.address !== false) vcardData.address = card.address;
+    vcardData.job_title = card.job_title;
+    vcardData.organization = card.organization;
+    if (vf.linkedin_url !== false) vcardData.linkedin_url = card.linkedin_url;
+    if (vf.instagram_url !== false) vcardData.instagram_url = card.instagram_url;
+    if (vf.twitter_url !== false) vcardData.twitter_url = card.twitter_url;
+    downloadVCard(vcardData as any);
+  };
+
   return (
-    <div className="min-h-screen bg-muted flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{ backgroundColor: card.theme.backgroundColor }}>
+      <div className="w-full max-w-md animate-slide-up">
         {/* Header */}
-        <div className="hero-gradient rounded-t-2xl px-8 py-10 text-center">
-          <div className="w-20 h-20 rounded-full bg-primary-foreground/20 flex items-center justify-center mx-auto mb-4 text-3xl font-bold text-primary-foreground font-heading">
-            {card.name.charAt(0).toUpperCase()}
-          </div>
-          <h1 className="font-heading text-2xl font-bold text-primary-foreground">{card.name}</h1>
-          {card.job_title && <p className="text-primary-foreground/80 mt-1">{card.job_title}</p>}
-          {card.organization && <p className="text-primary-foreground/60 text-sm mt-1">{card.organization}</p>}
+        <div
+          className="rounded-t-2xl px-8 py-10 text-center relative overflow-hidden"
+          style={{ background: `linear-gradient(135deg, ${card.theme.primaryColor}, ${card.theme.accentColor})` }}
+        >
+          {/* Decorative circles */}
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10 bg-white -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full opacity-10 bg-white translate-y-1/2 -translate-x-1/2" />
+
+          {card.avatar_url ? (
+            <img
+              src={card.avatar_url}
+              alt={card.name}
+              className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-white/30 object-cover shadow-lg"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-4 text-4xl font-bold text-white font-heading border-4 border-white/30 shadow-lg">
+              {card.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <h1 className="font-heading text-2xl font-bold text-white relative">{card.name}</h1>
+          {card.job_title && <p className="text-white/80 mt-1 relative">{card.job_title}</p>}
+          {card.organization && <p className="text-white/60 text-sm mt-1 relative">{card.organization}</p>}
         </div>
 
         {/* Contact Info */}
         <div className="bg-card rounded-b-2xl shadow-lg px-6 py-6 space-y-4">
-          {contactItems.map((item, i) => item.value && (
-            <div key={i} className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
-                <item.icon className="h-5 w-5 text-accent" />
+          {/* Download vCard button */}
+          <Button
+            onClick={handleDownloadVCard}
+            className="w-full gap-2 mb-2"
+            style={{ background: `linear-gradient(135deg, ${card.theme.primaryColor}, ${card.theme.accentColor})` }}
+          >
+            <Download className="h-4 w-4" /> Save Contact
+          </Button>
+
+          {visibleContacts.map((item, i) => (
+            <div key={i} className="flex items-center gap-3 animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: `${card.theme.accentColor}15` }}
+              >
+                <item.icon className="h-5 w-5" style={{ color: card.theme.accentColor }} />
               </div>
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">{item.label}</p>
                 {item.href ? (
-                  <a href={item.href} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-foreground hover:text-accent truncate block">
+                  <a href={item.href} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-foreground hover:opacity-70 truncate block transition-opacity">
                     {item.value}
                   </a>
                 ) : (
@@ -114,18 +179,45 @@ export default function PublicCard() {
             </div>
           ))}
 
-          {socialItems.some(s => s.value) && (
+          {visibleSocials.length > 0 && (
             <div className="flex gap-3 pt-4 border-t justify-center">
-              {socialItems.map((s, i) => s.value && (
-                <a key={i} href={s.value} target="_blank" rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center hover:bg-accent/20 transition-colors"
-                  title={s.label}>
-                  <s.icon className="h-5 w-5 text-accent" />
+              {visibleSocials.map((s, i) => (
+                <a
+                  key={i}
+                  href={s.value!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:scale-110"
+                  style={{ backgroundColor: `${card.theme.accentColor}15` }}
+                  title={s.label}
+                >
+                  <s.icon className="h-5 w-5" style={{ color: card.theme.accentColor }} />
                 </a>
               ))}
             </div>
           )}
+
+          {/* Feedback Form */}
+          <FeedbackForm cardId={card.id} />
+
+          {/* Create account CTA */}
+          <div className="pt-4 border-t text-center">
+            <p className="text-xs text-muted-foreground mb-2">Want your own digital business card?</p>
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-1.5 text-sm font-medium hover:underline transition-colors"
+              style={{ color: card.theme.accentColor }}
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              Create your free card
+            </Link>
+          </div>
         </div>
+
+        {/* Powered by */}
+        <p className="text-center text-[10px] text-muted-foreground mt-4 opacity-60">
+          Powered by CardSync
+        </p>
       </div>
     </div>
   );

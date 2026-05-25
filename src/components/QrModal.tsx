@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
@@ -87,7 +87,7 @@ export default function QrModal({ cardId, onClose }: QrModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-foreground/40 flex items-center justify-center px-4" onClick={onClose}>
-      <div className="card-elevated w-full max-w-sm p-6 relative" onClick={e => e.stopPropagation()}>
+      <div className="card-elevated w-full max-w-sm p-6 relative animate-scale-in" onClick={e => e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
           <X className="h-5 w-5" />
         </button>

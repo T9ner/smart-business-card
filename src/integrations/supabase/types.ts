@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
@@ -17,6 +15,7 @@ export type Database = {
       business_cards: {
         Row: {
           address: string | null
+          avatar_url: string | null
           created_at: string
           email: string | null
           id: string
@@ -28,13 +27,16 @@ export type Database = {
           phone: string | null
           public_id: string
           status: string
+          theme: Json
           twitter_url: string | null
           updated_at: string
           user_id: string
+          visible_fields: Json
           website: string | null
         }
         Insert: {
           address?: string | null
+          avatar_url?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -46,13 +48,16 @@ export type Database = {
           phone?: string | null
           public_id?: string
           status?: string
+          theme?: Json
           twitter_url?: string | null
           updated_at?: string
           user_id: string
+          visible_fields?: Json
           website?: string | null
         }
         Update: {
           address?: string | null
+          avatar_url?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -64,32 +69,105 @@ export type Database = {
           phone?: string | null
           public_id?: string
           status?: string
+          theme?: Json
           twitter_url?: string | null
           updated_at?: string
           user_id?: string
+          visible_fields?: Json
           website?: string | null
+        }
+        Relationships: []
+      }
+      feedback: {
+        Row: {
+          card_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+          name: string | null
+        }
+        Insert: {
+          card_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+          name?: string | null
+        }
+        Update: {
+          card_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "business_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           full_name: string
           id: string
+          role: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           full_name: string
           id?: string
+          role?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           full_name?: string
           id?: string
+          role?: string
           updated_at?: string
           user_id?: string
         }
