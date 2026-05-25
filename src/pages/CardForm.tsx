@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Upload, Eye, EyeOff, Palette } from "lucide-react";
+import { ArrowLeft, Upload, Palette, ChevronDown, ChevronUp } from "lucide-react";
 
 const DEFAULT_VISIBLE = {
   phone: true, email: true, website: true, address: true,
@@ -27,6 +27,7 @@ export default function CardForm() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showMore, setShowMore] = useState(false);
   const [showCustomization, setShowCustomization] = useState(false);
 
   const [form, setForm] = useState({
@@ -36,7 +37,6 @@ export default function CardForm() {
   });
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>(DEFAULT_VISIBLE);
   const [theme, setTheme] = useState(DEFAULT_THEME);
 
   useEffect(() => {
@@ -51,19 +51,18 @@ export default function CardForm() {
           status: data.status,
         });
         setAvatarUrl(data.avatar_url || null);
-        const vf = data.visible_fields;
-        if (typeof vf === "object" && vf !== null) setVisibleFields(vf as Record<string, boolean>);
         const th = data.theme;
         if (typeof th === "object" && th !== null) setTheme(th as typeof DEFAULT_THEME);
+        // If any extra fields are filled, expand the section
+        const d = data;
+        if (d.organization || d.website || d.address || d.linkedin_url || d.instagram_url || d.twitter_url) {
+          setShowMore(true);
+        }
       });
     }
   }, [id]);
 
   const handleChange = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
-
-  const toggleVisibility = (field: string) => {
-    setVisibleFields((prev) => ({ ...prev, [field]: !prev[field] }));
-  };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -100,7 +99,7 @@ export default function CardForm() {
     const payload = {
       ...form,
       avatar_url: avatarUrl,
-      visible_fields: visibleFields,
+      visible_fields: DEFAULT_VISIBLE,
       theme,
     };
 
@@ -130,22 +129,9 @@ export default function CardForm() {
     setLoading(false);
   };
 
-  const fields: { key: string; label: string; type?: string; required?: boolean; placeholder?: string; toggleable?: boolean }[] = [
-    { key: "name", label: "Full Name", required: true, placeholder: "John Doe" },
-    { key: "job_title", label: "Job Title", placeholder: "Software Engineer" },
-    { key: "organization", label: "Organization", placeholder: "Acme Inc." },
-    { key: "phone", label: "Phone", type: "tel", placeholder: "+234 801 234 5678", toggleable: true },
-    { key: "email", label: "Email", type: "email", placeholder: "john@example.com", toggleable: true },
-    { key: "website", label: "Website", type: "url", placeholder: "https://example.com", toggleable: true },
-    { key: "address", label: "Address", placeholder: "123 Main St, City", toggleable: true },
-    { key: "linkedin_url", label: "LinkedIn URL", type: "url", placeholder: "https://linkedin.com/in/...", toggleable: true },
-    { key: "instagram_url", label: "Instagram URL", type: "url", placeholder: "https://instagram.com/...", toggleable: true },
-    { key: "twitter_url", label: "X / Twitter URL", type: "url", placeholder: "https://x.com/...", toggleable: true },
-  ];
-
   return (
     <div className="min-h-screen bg-muted px-4 py-8">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-lg mx-auto">
         <Button variant="ghost" onClick={() => navigate("/dashboard")} className="mb-6 gap-2">
           <ArrowLeft className="h-4 w-4" /> Back to Dashboard
         </Button>
@@ -182,54 +168,90 @@ export default function CardForm() {
               </div>
             </div>
 
-            {/* Form Fields */}
-            {fields.map((f) => (
-              <div key={f.key}>
-                <div className="flex items-center justify-between mb-1">
-                  <Label htmlFor={f.key}>{f.label}{f.required && " *"}</Label>
-                  {f.toggleable && (
-                    <button
-                      type="button"
-                      onClick={() => toggleVisibility(f.key)}
-                      className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full transition-colors ${
-                        visibleFields[f.key] !== false
-                          ? "bg-accent/10 text-accent"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                      title={visibleFields[f.key] !== false ? "Visible to viewers" : "Hidden from viewers"}
-                    >
-                      {visibleFields[f.key] !== false ? (
-                        <><Eye className="h-3 w-3" /> Visible</>
-                      ) : (
-                        <><EyeOff className="h-3 w-3" /> Hidden</>
-                      )}
-                    </button>
-                  )}
-                </div>
-                <Input
-                  id={f.key}
-                  type={f.type || "text"}
-                  value={(form as any)[f.key]}
-                  onChange={(e) => handleChange(f.key, e.target.value)}
-                  placeholder={f.placeholder}
-                  required={f.required}
-                  className={visibleFields[f.key] === false ? "opacity-50" : ""}
-                />
-              </div>
-            ))}
-
-            {/* Status */}
+            {/* Core Fields */}
             <div>
-              <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
-                value={form.status}
-                onChange={(e) => handleChange("status", e.target.value)}
-                className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                value={form.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                placeholder="John Doe"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="job_title">Job Title</Label>
+              <Input
+                id="job_title"
+                value={form.job_title}
+                onChange={(e) => handleChange("job_title", e.target.value)}
+                placeholder="Software Engineer"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={form.phone}
+                onChange={(e) => handleChange("phone", e.target.value)}
+                placeholder="+234 801 234 5678"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={form.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+                placeholder="john@example.com"
+              />
+            </div>
+
+            {/* Optional / Extra Fields */}
+            <div className="border-t pt-4">
+              <button
+                type="button"
+                onClick={() => setShowMore(!showMore)}
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground w-full"
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
+                {showMore ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {showMore ? "Hide" : "Add"} optional details
+                <span className="text-xs text-muted-foreground ml-1">(organization, website, address, socials)</span>
+              </button>
+
+              {showMore && (
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <Label htmlFor="organization">Organization</Label>
+                    <Input id="organization" value={form.organization} onChange={(e) => handleChange("organization", e.target.value)} placeholder="Acme Inc." />
+                  </div>
+                  <div>
+                    <Label htmlFor="website">Website</Label>
+                    <Input id="website" type="url" value={form.website} onChange={(e) => handleChange("website", e.target.value)} placeholder="https://example.com" />
+                  </div>
+                  <div>
+                    <Label htmlFor="address">Address</Label>
+                    <Input id="address" value={form.address} onChange={(e) => handleChange("address", e.target.value)} placeholder="123 Main St, City" />
+                  </div>
+                  <div>
+                    <Label htmlFor="linkedin_url">LinkedIn URL</Label>
+                    <Input id="linkedin_url" type="url" value={form.linkedin_url} onChange={(e) => handleChange("linkedin_url", e.target.value)} placeholder="https://linkedin.com/in/..." />
+                  </div>
+                  <div>
+                    <Label htmlFor="instagram_url">Instagram URL</Label>
+                    <Input id="instagram_url" type="url" value={form.instagram_url} onChange={(e) => handleChange("instagram_url", e.target.value)} placeholder="https://instagram.com/..." />
+                  </div>
+                  <div>
+                    <Label htmlFor="twitter_url">X / Twitter URL</Label>
+                    <Input id="twitter_url" type="url" value={form.twitter_url} onChange={(e) => handleChange("twitter_url", e.target.value)} placeholder="https://x.com/..." />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Theme Customization Toggle */}
@@ -237,14 +259,14 @@ export default function CardForm() {
               <button
                 type="button"
                 onClick={() => setShowCustomization(!showCustomization)}
-                className="flex items-center gap-2 text-sm font-medium text-accent hover:underline"
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
               >
                 <Palette className="h-4 w-4" />
                 {showCustomization ? "Hide" : "Customize"} Card Theme
               </button>
 
               {showCustomization && (
-                <div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-3 animate-slide-up">
+                <div className="mt-4 p-4 bg-muted/50 rounded-lg space-y-3">
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <Label htmlFor="primaryColor" className="text-xs">Primary Color</Label>
@@ -286,12 +308,11 @@ export default function CardForm() {
                       </div>
                     </div>
                   </div>
-                  {/* Live preview strip */}
                   <div
-                    className="rounded-lg h-12 flex items-center justify-center text-white text-sm font-medium"
-                    style={{ background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.accentColor})` }}
+                    className="rounded-lg h-10 flex items-center justify-center text-white text-sm font-medium"
+                    style={{ backgroundColor: theme.primaryColor }}
                   >
-                    Preview: {form.name || "Your Name"}
+                    {form.name || "Your Name"}
                   </div>
                 </div>
               )}
