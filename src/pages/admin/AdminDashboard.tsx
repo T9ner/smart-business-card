@@ -117,12 +117,6 @@ export default function AdminDashboard() {
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={scanData}>
-                    <defs>
-                      <linearGradient id="scanGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2d9c83" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#2d9c83" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" />
                     <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
@@ -134,7 +128,7 @@ export default function AdminDashboard() {
                         fontSize: "12px",
                       }}
                     />
-                    <Area type="monotone" dataKey="scans" stroke="#2d9c83" strokeWidth={2} fill="url(#scanGradient)" />
+                    <Area type="monotone" dataKey="scans" stroke="#2d9c83" strokeWidth={2} fill="#2d9c83" fillOpacity={0.1} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

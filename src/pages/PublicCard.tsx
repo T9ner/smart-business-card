@@ -69,7 +69,7 @@ export default function PublicCard() {
   if (notFound) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted px-4">
-        <div className="text-center animate-fade-in">
+        <div className="text-center">
           <h1 className="font-heading text-2xl font-bold mb-2">Card Not Found</h1>
           <p className="text-muted-foreground mb-6">This business card doesn't exist or is inactive.</p>
           <Button asChild><Link to="/">Go to CardSync</Link></Button>
@@ -121,15 +121,12 @@ export default function PublicCard() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8" style={{ backgroundColor: card.theme.backgroundColor }}>
-      <div className="w-full max-w-md animate-slide-up">
+      <div className="w-full max-w-md">
         {/* Header */}
         <div
-          className="rounded-t-2xl px-8 py-10 text-center relative overflow-hidden"
-          style={{ background: `linear-gradient(135deg, ${card.theme.primaryColor}, ${card.theme.accentColor})` }}
+          className="rounded-t-2xl px-8 py-10 text-center relative"
+          style={{ backgroundColor: card.theme.primaryColor }}
         >
-          {/* Decorative circles */}
-          <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10 bg-white -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full opacity-10 bg-white translate-y-1/2 -translate-x-1/2" />
 
           {card.avatar_url ? (
             <img
@@ -159,7 +156,7 @@ export default function PublicCard() {
           </Button>
 
           {visibleContacts.map((item, i) => (
-            <div key={i} className="flex items-center gap-3 animate-fade-in" style={{ animationDelay: `${i * 80}ms` }}>
+            <div key={i} className="flex items-center gap-3">
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{ backgroundColor: `${card.theme.accentColor}15` }}
@@ -187,7 +184,7 @@ export default function PublicCard() {
                   href={s.value!}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:scale-110"
+                  className="w-10 h-10 rounded-lg flex items-center justify-center"
                   style={{ backgroundColor: `${card.theme.accentColor}15` }}
                   title={s.label}
                 >

@@ -147,7 +147,7 @@ export default function Dashboard() {
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         {/* Welcome + Stats */}
-        <div className="mb-8 animate-fade-in">
+        <div className="mb-8">
           <h1 className="font-heading text-2xl md:text-3xl font-bold mb-1">
             Welcome back{fullName ? `, ${fullName.split(" ")[0]}` : ""}
           </h1>
@@ -181,13 +181,7 @@ export default function Dashboard() {
               <div className="h-12">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={scanChartData}>
-                    <defs>
-                      <linearGradient id="miniGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2d9c83" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#2d9c83" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <Area type="monotone" dataKey="scans" stroke="#2d9c83" strokeWidth={2} fill="url(#miniGrad)" />
+                    <Area type="monotone" dataKey="scans" stroke="#2d9c83" strokeWidth={2} fill="#2d9c83" fillOpacity={0.1} />
                     <Tooltip contentStyle={{ fontSize: "11px", borderRadius: "6px" }} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -218,7 +212,7 @@ export default function Dashboard() {
             ))}
           </div>
         ) : cards.length === 0 ? (
-          <div className="card-elevated p-12 text-center animate-fade-in">
+          <div className="card-elevated p-12 text-center">
             <QrCode className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h2 className="font-heading text-xl font-semibold mb-2">No cards yet</h2>
             <p className="text-muted-foreground mb-6">Create your first digital business card</p>
@@ -226,14 +220,13 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {cards.map((card, i) => (
+            {cards.map((card) => (
               <div
                 key={card.id}
-                className="card-elevated overflow-hidden animate-slide-up"
-                style={{ animationDelay: `${i * 80}ms` }}
+                className="card-elevated overflow-hidden"
               >
                 {/* Mini hero header */}
-                <div className="hero-gradient px-6 py-4 flex items-center gap-3">
+                <div className="bg-primary px-6 py-4 flex items-center gap-3">
                   {card.avatar_url ? (
                     <img src={card.avatar_url} alt="" className="w-10 h-10 rounded-full border-2 border-white/30 object-cover" />
                   ) : (

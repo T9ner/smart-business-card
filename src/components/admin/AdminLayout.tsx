@@ -26,7 +26,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
       <aside className="admin-sidebar hidden md:flex flex-col">
         <div className="px-5 py-5 border-b">
           <Link to="/admin" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg hero-gradient flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <QrCode className="h-4 w-4 text-white" />
             </div>
             <div>
