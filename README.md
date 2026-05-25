@@ -1,3 +1,4 @@
-# Welcome to your Lovable project
+# CardSync — Digital Business Cards with QR Codes
 
-TODO: Document your project here
+A simple, clean digital business card application with dynamic QR codes and scan analytics. Built as a university final year project.
+
